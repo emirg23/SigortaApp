@@ -67,7 +67,6 @@ namespace SigortaApp.Controllers
                     return NotFound(new { message = "User not found." });
                 }
 
-                // Only allow specific roles
                 var allowedRoles = new[] { "admin", "logistics", "accounting" };
                 if (!allowedRoles.Contains(newRole.ToLower()))
                 {
