@@ -20,9 +20,34 @@ namespace SigortaApp.Controllers
 
             // GET /users
             [HttpGet]
-            public async Task<ActionResult<IEnumerable<object>>> GetUsers()
+            public async Task<ActionResult<IEnumerable<object>>> GetUsers(
+                [FromQuery] string? firstName,
+                [FromQuery] string? lastName,
+                [FromQuery] int? id,
+                [FromQuery] string? email,
+                [FromQuery] string? role
+
+
+            )
             {
-                var users = await _context.Users
+                var query = _context.Users.AsQueryable();
+
+                if(!string.IsNullOrEmpty(firstName))
+                    query = query.Where(u => u.FirstName.ToUpper().StartsWith(firstName.ToUpper()));
+
+                if(!string.IsNullOrEmpty(lastName))
+                    query = query.Where(u => u.LastName.ToUpper().StartsWith(lastName.ToUpper()));
+
+                if (!string.IsNullOrEmpty(email))
+                    query = query.Where(u => u.Email == email);
+
+                if (!string.IsNullOrEmpty(role))
+                    query = query.Where(u => u.Role == role);
+
+                if(id.HasValue)
+                    query = query.Where(u => u.Id == id);
+
+                var result = await query
                     .Select(u => new
                     {
                         u.Id,
@@ -34,7 +59,7 @@ namespace SigortaApp.Controllers
                     })
                     .ToListAsync();
 
-                return Ok(users);
+                return Ok(result);
             }
 
             // POST /users

@@ -4,6 +4,7 @@ using SigortaApp.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace SigortaApp.Controllers
 {
@@ -22,28 +23,57 @@ namespace SigortaApp.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<object>>> GetVehicles(
             [FromQuery] string? make,
-            [FromQuery] string? model)
+            [FromQuery] string? model,
+            [FromQuery] string? plateStart,
+            [FromQuery] string? plateEnd,
+            [FromQuery] int? id
+            )
         {
             var query = _context.Vehicles.AsQueryable();
-
+            
             if (!string.IsNullOrEmpty(make))
                 query = query.Where(v => v.Make.ToLower() == make.ToLower());
 
             if (!string.IsNullOrEmpty(model))
                 query = query.Where(v => v.Model.ToLower() == model.ToLower());
 
+            if (id.HasValue)
+                query = query.Where(v => v.Id == id);
+
             var vehicles = await query
-                .Select(v => new
-                {
+                .Select(v => new {
+                    v.Id,
+                    v.Plate,
+                    v.Make,
+                    v.Model,
+                    v.CreatedAt,
+                    Letters = ExtractLetters(v.Plate)
+                })
+                .ToListAsync();
+
+            if (!string.IsNullOrEmpty(plateStart))
+                vehicles = vehicles.Where(v => v.Letters.StartsWith(plateStart.ToUpper())).ToList();
+
+            if (!string.IsNullOrEmpty(plateEnd))
+                vehicles = vehicles.Where(v => v.Letters.EndsWith(plateEnd.ToUpper())).ToList();
+
+            var result = vehicles
+                .OrderBy(v => v.Letters)
+                .Select(v => new {
                     v.Id,
                     v.Plate,
                     v.Make,
                     v.Model,
                     v.CreatedAt
-                })
-                .ToListAsync();
+                });
 
-            return Ok(vehicles);
+            return Ok(result);
+        }
+
+
+        private static string ExtractLetters(string plate)
+        {
+            return new string(plate.Where(char.IsLetter).ToArray()).ToUpper();
         }
 
 

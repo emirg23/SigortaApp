@@ -20,9 +20,20 @@ namespace SigortaApp.Controllers
 
         // GET /insurances
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<object>>> GetInsurances()
+        public async Task<ActionResult<IEnumerable<object>>> GetInsurances(
+            [FromQuery] int? id,
+            [FromQuery] string? companyName
+        )
         {
-            var insurances = await _context.Insurances
+            var query = _context.Insurances.AsQueryable();
+
+            if(id.HasValue)
+                query = query.Where(i => i.Id == id);
+
+            if(!string.IsNullOrEmpty(companyName)) 
+                query = query.Where(i => i.CompanyName == companyName);
+
+            var insurances = await query
                 .Select(i => new
                 {
                     i.Id,
