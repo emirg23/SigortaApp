@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SigortaApp.Models;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using SigortaApp.DTOs;
+using SigortaApp.Services.Interfaces;
 
 namespace SigortaApp.Controllers
 {
@@ -11,94 +8,44 @@ namespace SigortaApp.Controllers
     [Route("[controller]")]
     public class InsurancesController : ControllerBase
     {
-        private readonly MyDbContext _context;
+        private readonly IInsuranceService _insuranceService;
 
-        public InsurancesController(MyDbContext context)
+        public InsurancesController(IInsuranceService insuranceService)
         {
-            _context = context;
+            _insuranceService = insuranceService;
         }
 
-        // GET /insurances
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<object>>> GetInsurances(
+        public async Task<IActionResult> GetInsurances(
             [FromQuery] int? id,
-            [FromQuery] string? companyName
-        )
+            [FromQuery] string? companyName)
         {
-            var query = _context.Insurances.AsQueryable();
-
-            if(id.HasValue)
-                query = query.Where(i => i.Id == id);
-
-            if(!string.IsNullOrEmpty(companyName)) 
-                query = query.Where(i => i.CompanyName == companyName);
-
-            var insurances = await query
-                .Select(i => new
-                {
-                    i.Id,
-                    i.ExpirationAt,
-                    i.CompanyName,
-                    i.CreatedAt
-                })
-                .ToListAsync();
-
-            return Ok(insurances);
+            var result = await _insuranceService.GetAllAsync(id, companyName);
+            return Ok(result);
         }
 
-        // GET /insurances/expired
         [HttpGet("expired")]
-        public async Task<ActionResult<IEnumerable<object>>> GetExpiredInsurances()
+        public async Task<IActionResult> GetExpiredInsurances()
         {
-            var today = DateTime.UtcNow;
-
-            var expiredInsurances = await _context.Insurances
-                .Where(i => i.ExpirationAt < today)
-                .Select(i => new
-                {
-                    i.Id,
-                    i.ExpirationAt,
-                    i.CompanyName,
-                    i.CreatedAt
-                })
-                .ToListAsync();
-
-            return Ok(expiredInsurances);
+            var result = await _insuranceService.GetExpiredAsync();
+            return Ok(result);
         }
 
-        // POST /insurances
         [HttpPost]
-        public async Task<ActionResult> CreateInsurance([FromBody] InsuranceInput input)
+        public async Task<IActionResult> CreateInsurance([FromBody] InsuranceDTO input)
         {
-            var insurance = new Insurance
-            {
-                Id = input.Id,
-                ExpirationAt = input.ExpirationAt,
-                CompanyName = input.CompanyName,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.Insurances.Add(insurance);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetInsurances), new { id = insurance.Id }, insurance);
+            var created = await _insuranceService.CreateAsync(input);
+            return CreatedAtAction(nameof(GetInsurances), new { id = created.Id }, created);
         }
 
-        // DELETE /insurances/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteInsurance(int id)
         {
-            var insurance = await _context.Insurances.FindAsync(id);
-            if (insurance == null)
-            {
-                return NotFound(new { message = "Insurance not found." });
-            }
+            var success = await _insuranceService.DeleteAsync(id);
+            if (!success)
+                return NotFound();
 
-            _context.Insurances.Remove(insurance);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = $"Insurance {insurance.Id} has been deleted." });
+            return Ok();
         }
-
     }
 }

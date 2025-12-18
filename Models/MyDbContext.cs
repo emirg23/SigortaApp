@@ -20,27 +20,12 @@ public class Vehicle
     public DateTime CreatedAt { get; set; }
 }
 
-public class VehicleInput
-{
-    public int Id { get; set; }  
-    public string Plate { get; set; }  
-    public string Make { get; set; }
-    public string Model { get; set; }
-}
-
 public class Insurance
 {
     public int Id { get; set; }  
     public DateTime ExpirationAt { get; set; }
     public string CompanyName { get; set; }
     public DateTime CreatedAt { get; set; }
-}
-
-public class InsuranceInput
-{
-    public int Id { get; set; }  
-    public DateTime ExpirationAt { get; set; }
-    public string CompanyName { get; set; }
 }
 
 public class User
@@ -51,13 +36,5 @@ public class User
     public string Role { get; set; }
     public string Email { get; set; }
     public DateTime CreatedAt { get; set; }
-}
-
-public class UserInput
-{
-    public int Id { get; set; }  
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
-    public string Email { get; set; }
 }
 }

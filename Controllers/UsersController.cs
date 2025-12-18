@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SigortaApp.Models;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using SigortaApp.DTOs;
+using SigortaApp.Services.Interfaces;
 
 namespace SigortaApp.Controllers
 {
@@ -11,114 +8,62 @@ namespace SigortaApp.Controllers
     [Route("[controller]")]
     public class UsersController : ControllerBase
     {
-        private readonly MyDbContext _context;
+        private readonly IUserService _userService;
 
-        public UsersController(MyDbContext context)
+        public UsersController(IUserService userService)
         {
-            _context = context;
+            _userService = userService;
         }
 
-            // GET /users
-            [HttpGet]
-            public async Task<ActionResult<IEnumerable<object>>> GetUsers(
-                [FromQuery] string? firstName,
-                [FromQuery] string? lastName,
-                [FromQuery] int? id,
-                [FromQuery] string? email,
-                [FromQuery] string? role
+        [HttpGet]
+        public async Task<IActionResult> GetUsers(
+            [FromQuery] string? firstName,
+            [FromQuery] string? lastName,
+            [FromQuery] int? id,
+            [FromQuery] string? email,
+            [FromQuery] string? role)
+        {
+            var result = await _userService.GetUsersAsync(
+                firstName, lastName, id, email, role);
 
+            return Ok(result);
+        }
 
-            )
+        [HttpPost]
+        public async Task<IActionResult> AddUser([FromBody] UserDTO input)
+        {
+            await _userService.AddUserAsync(input);
+            return Ok(new { message = "User created successfully." });
+        }
+
+        [HttpPatch("{id}/role")]
+        public async Task<IActionResult> UpdateUserRole(int id, [FromBody] string newRole)
+        {
+            try
             {
-                var query = _context.Users.AsQueryable();
-
-                if(!string.IsNullOrEmpty(firstName))
-                    query = query.Where(u => u.FirstName.ToUpper().StartsWith(firstName.ToUpper()));
-
-                if(!string.IsNullOrEmpty(lastName))
-                    query = query.Where(u => u.LastName.ToUpper().StartsWith(lastName.ToUpper()));
-
-                if (!string.IsNullOrEmpty(email))
-                    query = query.Where(u => u.Email == email);
-
-                if (!string.IsNullOrEmpty(role))
-                    query = query.Where(u => u.Role == role);
-
-                if(id.HasValue)
-                    query = query.Where(u => u.Id == id);
-
-                var result = await query
-                    .Select(u => new
-                    {
-                        u.Id,
-                        u.FirstName,
-                        u.LastName,
-                        u.Role,
-                        u.Email,
-                        u.CreatedAt
-                    })
-                    .ToListAsync();
-
-                return Ok(result);
-            }
-
-            // POST /users
-            [HttpPost]
-            public async Task<IActionResult> AddUser([FromBody] UserInput input)
-            {
-                var user = new User
-                {
-                    Id = input.Id,
-                    FirstName = input.FirstName,
-                    LastName = input.LastName,
-                    Role = "user",
-                    Email = input.Email,
-                    CreatedAt = DateTime.UtcNow 
-                };
-
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
-
-                return CreatedAtAction(nameof(GetUsers), new { id = user.Id }, user);
-            }
-
-            // PATCH /users/{id}/role
-            [HttpPatch("{id}/role")]
-            public async Task<IActionResult> UpdateUserRole(int id, [FromBody] string newRole)
-            {
-                var user = await _context.Users.FindAsync(id);
-                if (user == null)
-                {
+                var success = await _userService.UpdateUserRoleAsync(id, newRole);
+                if (!success)
                     return NotFound(new { message = "User not found." });
-                }
 
-                var allowedRoles = new[] { "admin", "logistics", "accounting" };
-                if (!allowedRoles.Contains(newRole.ToLower()))
-                {
-                    return BadRequest(new { message = "Invalid role. Must be 'admin', 'logistics', or 'accounting'." });
-                }
-
-                user.Role = newRole.ToLower();
-                await _context.SaveChangesAsync();
-
-                return Ok(new { message = $"User {user.FirstName} role updated to '{user.Role}'." });
+                return Ok(new { message = "User role updated." });
             }
-            
-            // DELETE /users/{id}
-            [HttpDelete("{id}")]
-            public async Task<IActionResult> DeleteUser(int id)
+            catch
             {
-                var user = await _context.Users.FindAsync(id);
-                if (user == null)
+                return BadRequest(new
                 {
-                    return NotFound(new { message = "User not found." });
-                }
-
-                _context.Users.Remove(user);
-                await _context.SaveChangesAsync();
-
-                return Ok(new { message = $"User {user.FirstName} has been deleted." });
+                    message = "Invalid role. Must be 'admin', 'logistics', or 'accounting'."
+                });
             }
+        }
 
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            var success = await _userService.DeleteUserAsync(id);
+            if (!success)
+                return NotFound(new { message = "User not found." });
+
+            return Ok(new { message = "User deleted successfully." });
+        }
     }
 }
