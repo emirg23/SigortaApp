@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using SigortaApp.DTOs;
 using SigortaApp.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SigortaApp.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("[controller]")]
     public class InsurancesController : ControllerBase
@@ -14,7 +16,7 @@ namespace SigortaApp.Controllers
         {
             _insuranceService = insuranceService;
         }
-
+        
         [HttpGet]
         public async Task<IActionResult> GetInsurances(
             [FromQuery] int? id,

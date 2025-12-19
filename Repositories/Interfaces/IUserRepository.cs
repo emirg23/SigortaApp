@@ -9,5 +9,6 @@ namespace SigortaApp.Repositories.Interfaces
         Task AddAsync(User user);
         Task DeleteAsync(User user);
         Task SaveChangesAsync();
+        Task<User?> GetByEmailAsync(string email);
     }
 }

@@ -12,7 +12,8 @@ namespace SigortaApp.Services.Interfaces
             string? email,
             string? role);
 
-        Task AddUserAsync(UserDTO input);
+        Task<User?> ValidateUserAsync(string email, string password);
+        Task<User> RegisterAsync(RegisterUserDTO input);
         Task<bool> UpdateUserRoleAsync(int id, string newRole);
         Task<bool> DeleteUserAsync(int id);
     }

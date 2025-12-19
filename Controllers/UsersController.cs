@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SigortaApp.DTOs;
 using SigortaApp.Services.Interfaces;
 
 namespace SigortaApp.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("[controller]")]
     public class UsersController : ControllerBase
@@ -30,9 +32,9 @@ namespace SigortaApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddUser([FromBody] UserDTO input)
+        public async Task<IActionResult> AddUser([FromBody] RegisterUserDTO input)
         {
-            await _userService.AddUserAsync(input);
+            await _userService.RegisterAsync(input);
             return Ok(new { message = "User created successfully." });
         }
 

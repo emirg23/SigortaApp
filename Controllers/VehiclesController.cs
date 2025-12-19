@@ -1,11 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Sigorta.DTOs;
 using SigortaApp.Services.Interfaces;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace SigortaApp.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("[controller]")]
     public class VehiclesController : ControllerBase

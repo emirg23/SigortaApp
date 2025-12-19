@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SigortaApp.DTOs;
 using SigortaApp.Models;
@@ -9,6 +11,7 @@ namespace SigortaApp.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+        private readonly PasswordHasher<User> _hasher = new();
 
         public UserService(IUserRepository userRepository)
         {
@@ -52,20 +55,26 @@ namespace SigortaApp.Services
                 .ToListAsync();
         }
 
-        public async Task AddUserAsync(UserDTO input)
+        public async Task<User> RegisterAsync(RegisterUserDTO input)
         {
+            var exists = await _userRepository.GetByEmailAsync(input.Email);
+            if (exists != null)
+                throw new Exception("Bu email zaten kayıtlı");
+
             var user = new User
             {
-                Id = input.Id,
                 FirstName = input.FirstName,
                 LastName = input.LastName,
                 Email = input.Email,
                 Role = "user",
                 CreatedAt = DateTime.UtcNow
             };
+            user.PasswordHash = _hasher.HashPassword(user, input.Password);
 
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
+
+            return user;
         }
 
         public async Task<bool> UpdateUserRoleAsync(int id, string newRole)
@@ -95,5 +104,15 @@ namespace SigortaApp.Services
 
             return true;
         }
+
+            public async Task<User?> ValidateUserAsync(string email, string password)
+    {
+        var user = await _userRepository.GetByEmailAsync(email);
+        if (user == null) return null;
+
+        var result = _hasher.VerifyHashedPassword(user, user.PasswordHash, password);
+        return result == PasswordVerificationResult.Success ? user : null;
+    }
+
     }
 }
