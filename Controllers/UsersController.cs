@@ -5,7 +5,6 @@ using SigortaApp.Services.Interfaces;
 
 namespace SigortaApp.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("[controller]")]
     public class UsersController : ControllerBase
